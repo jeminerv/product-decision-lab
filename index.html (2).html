@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Interface e Comportamento: Como o design molda decisões</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Lora:wght@700;900&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ─────────────────────────────────────── */
+:root{
+  --bg:#050510;--bg2:#07071a;--bg3:#090921;
+  --surf:#0f0f28;--surf2:#15153a;--surf3:#1c1c4a;
+  --border:rgba(120,100,255,0.1);--border2:rgba(120,100,255,0.22);--border3:rgba(120,100,255,0.35);
+  --purple:#6d4fff;--purple2:#9b7bff;--purple3:#c4aeff;
+  --cyan:#00d4ff;--cyan2:#5ee7ff;--cyan3:#a8f0ff;
+  --green:#00e5a0;--red:#ff5e7a;--amber:#ffb347;
+  /* ── LEGIBILITY TOKENS ── */
+  --text:#F9FAFB;--text2:#D1D5DB;--text3:#9CA3AF;
+  --glow:rgba(109,79,255,0.28);--cglow:rgba(0,212,255,0.2);
+  --radius:8px;--radius-sm:4px;
+  --ease:cubic-bezier(.4,0,.2,1);
+}
+
+/* ── RESET ──────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.65;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* ── CANVAS ─────────────────────────────────────── */
+#bgc{position:fixed;inset:0;z-index:0;opacity:.5;pointer-events:none}
+
+/* ── LAYOUT ─────────────────────────────────────── */
+.sec{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:88px 24px}
+.wrap{max-width:880px;margin:0 auto;width:100%}
+
+/* ── TYPOGRAPHY ─────────────────────────────────── */
+h1,h2,h3{font-family:'Lora',serif;line-height:1.1;letter-spacing:-0.01em}
+.label{font-size:10px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;color:var(--cyan);margin-bottom:22px;display:flex;align-items:center;gap:12px}
+.label::before{content:'';width:28px;height:1px;background:linear-gradient(90deg,var(--cyan),transparent)}
+
+/* ── DIVIDER ─────────────────────────────────────── */
+hr.div{border:none;height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent)}
+
+/* ── NAV DOTS ────────────────────────────────────── */
+#nav{position:fixed;right:20px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:12px}
+.nd{width:6px;height:6px;border-radius:50%;background:var(--text3);cursor:pointer;transition:all .35s var(--ease);touch-action:manipulation}
+.nd.on{background:var(--cyan);box-shadow:0 0 12px var(--cyan);transform:scale(1.7)}
+
+/* ── PROGRESS BAR ────────────────────────────────── */
+#prog{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--purple),var(--cyan));z-index:1000;transition:width .4s var(--ease);pointer-events:none}
+
+/* ── BUTTONS ─────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  padding:15px 36px;min-height:52px;
+  background:transparent;color:var(--cyan);
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  border:1px solid var(--cyan);border-radius:var(--radius-sm);cursor:pointer;
+  transition:all .3s var(--ease);position:relative;overflow:hidden;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.btn::before{content:'';position:absolute;inset:0;background:var(--cyan);transform:translateX(-101%);transition:transform .3s var(--ease);z-index:0}
+.btn > *{position:relative;z-index:1}
+.btn:hover{color:#050510}
+.btn:hover::before{transform:translateX(0)}
+.btn:active{transform:scale(.96);transition:transform .1s}
+
+.btn-ghost{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px 30px;min-height:50px;
+  border:1px solid var(--border2);background:transparent;color:var(--text2);
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+  border-radius:var(--radius-sm);cursor:pointer;transition:all .28s var(--ease);
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;
+}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-ghost:active{transform:scale(.96)}
+
+/* ══════════════════════════════════════════════════
+   S1 — HERO
+══════════════════════════════════════════════════ */
+#s1{align-items:flex-start;padding-top:100px;padding-bottom:80px}
+.hero-kicker{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--cyan);margin-bottom:18px;font-weight:600;opacity:.8}
+.hero-title{font-size:clamp(36px,6vw,72px);font-weight:900;color:var(--text);line-height:1.0;margin-bottom:12px}
+.hero-title span{background:linear-gradient(135deg,var(--purple3) 0%,var(--cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub-big{font-size:clamp(15px,2vw,18px);color:var(--text2);font-weight:400;margin-bottom:10px;max-width:520px;line-height:1.5}
+.hero-sub{font-size:14.5px;color:var(--text3);max-width:460px;line-height:1.65;margin-bottom:36px}
+.scroll-hint{position:absolute;bottom:28px;left:24px;color:var(--text3);font-size:10px;letter-spacing:.2em;display:flex;align-items:center;gap:10px;text-transform:uppercase;pointer-events:none}
+.scroll-hint::before{content:'';width:32px;height:1px;background:var(--text3);animation:expand 2.2s infinite}
+@keyframes expand{0%,100%{width:16px;opacity:.4}50%{width:34px;opacity:1}}
+
+/* ══════════════════════════════════════════════════
+   S2 — GAME
+══════════════════════════════════════════════════ */
+.sec-title{font-size:clamp(26px,4vw,46px);font-weight:900;color:var(--text);margin-bottom:12px}
+.sec-desc{color:var(--text2);font-size:15.5px;max-width:520px;line-height:1.75;font-weight:400}
+
+/* Game instruction box */
+.game-intro{
+  background:var(--surf);border:1px solid var(--border2);
+  border-left:3px solid var(--cyan);
+  border-radius:0 var(--radius) var(--radius) 0;
+  padding:20px 24px;margin:28px 0;
+  display:flex;gap:16px;align-items:flex-start;
+}
+.game-intro-icon{color:var(--cyan);font-size:16px;margin-top:2px;flex-shrink:0;line-height:1.75}
+.game-intro p{font-size:14px;color:var(--text2);line-height:1.75}
+.game-intro strong{color:var(--text);font-weight:600}
+
+/* Level tabs */
+.lvl-tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.lt{
+  padding:9px 20px;min-height:40px;
+  border:1px solid var(--border2);background:transparent;
+  color:var(--text3);font-family:'DM Sans',sans-serif;
+  font-size:12.5px;font-weight:500;cursor:pointer;
+  transition:all .25s var(--ease);border-radius:var(--radius-sm);
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.lt.on{background:var(--purple);border-color:var(--purple);color:#fff;box-shadow:0 0 16px var(--glow)}
+.lt.done{border-color:var(--green);color:var(--green)}
+.lt:disabled{opacity:.28;cursor:not-allowed}
+
+/* Stats bar */
+.stats-bar{
+  display:flex;background:var(--surf);
+  border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;margin-bottom:20px;
+}
+.si{flex:1;padding:14px 12px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:4px}
+.si:last-child{border-right:none}
+.sl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.15em;font-weight:700}
+.sv{font-family:'Lora',serif;font-size:20px;font-weight:700;color:var(--text);line-height:1}
+
+/* Memory grid */
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.mc{
+  aspect-ratio:1;background:var(--surf);
+  border:1px solid var(--border);border-radius:var(--radius);
+  cursor:pointer;position:relative;
+  transition:transform .35s cubic-bezier(.34,1.4,.64,1),border-color .25s,box-shadow .25s;
+  transform-style:preserve-3d;perspective:800px;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+/* Hover only on unmatched, unflipped cards */
+.mc:not(.mt):not(.fl):hover{transform:translateY(-4px) scale(1.02);border-color:var(--border2);box-shadow:0 10px 28px rgba(0,0,0,.45)}
+.mc.fl:not(.mt){transform:rotateY(180deg)}
+.mc.mt{
+  border-color:var(--cyan)!important;
+  box-shadow:0 0 22px var(--cglow)!important;
+  background:rgba(0,212,255,.07);
+  cursor:default;
+  transform:none!important;
+  animation:none!important;
+  pointer-events:none;
+  transition:none!important;
+}
+.mc.wr{border-color:var(--red)!important;box-shadow:0 0 14px rgba(255,94,122,.25)!important;animation:shake .42s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+/* Card faces — LEGIBILITY FIXED */
+.cf{position:absolute;inset:0;border-radius:calc(var(--radius) - 1px);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:10px;backface-visibility:hidden;text-align:center}
+.cb{background:linear-gradient(145deg,var(--surf),var(--surf2))}
+.cb .ci{font-size:20px;color:var(--purple2);opacity:.25;font-weight:700;line-height:1}
+/* Front face: dark bg with HIGH CONTRAST text */
+.cv{transform:rotateY(180deg);background:linear-gradient(145deg,#1e1e48,#252568)}
+/* Matched state: override face visibility via opacity, no flip needed */
+.mc.mt .cb{opacity:0!important;transition:opacity .3s ease}
+.mc.mt .cv{transform:rotateY(0deg)!important;backface-visibility:visible!important;transition:transform .3s ease}
+.ct{font-size:12px;font-weight:700;color:#FFFFFF;margin-bottom:4px;font-family:'DM Sans',sans-serif;line-height:1.3}
+.cd{font-size:10px;color:#C8D0E0;line-height:1.4;font-weight:400}
+.cem{font-size:22px;margin-bottom:6px;color:var(--cyan2);line-height:1}
+
+/* Insight panel */
+.insight{
+  display:none;margin-top:14px;
+  padding:16px 20px;
+  background:rgba(0,212,255,.07);
+  border:1px solid rgba(0,212,255,.18);
+  border-left:3px solid var(--cyan);
+  border-radius:0 var(--radius) var(--radius) 0;
+  font-size:14px;color:var(--text2);line-height:1.72;
+  animation:fadeUp .4s var(--ease);
+}
+.insight.on{display:block}
+.insight strong{color:var(--cyan);font-weight:600}
+
+/* Level summary */
+.lsummary{display:none;padding:40px 16px;text-align:center;animation:fadeUp .5s var(--ease)}
+.lsummary.on{display:block}
+.lsum-title{font-family:'Lora',serif;font-size:clamp(22px,3.5vw,28px);font-weight:900;color:var(--text);margin-bottom:8px}
+.lsum-sub{font-size:14px;color:var(--text2);margin-bottom:32px;font-weight:400;line-height:1.65}
+.schart{display:flex;justify-content:center;align-items:flex-end;gap:20px;margin-bottom:32px;height:90px}
+.sbar{display:flex;flex-direction:column;align-items:center;gap:8px;width:56px}
+.sbfill{width:100%;background:linear-gradient(to top,var(--purple),var(--cyan));border-radius:3px 3px 0 0;transition:height 1s cubic-bezier(.34,1.2,.64,1)}
+.sblabel{font-size:9px;color:var(--text3);text-align:center;line-height:1.5;letter-spacing:.04em}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══════════════════════════════════════════════════
+   S3 — EXPLAIN
+══════════════════════════════════════════════════ */
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:30px}
+.cc{
+  background:var(--surf);border:1px solid var(--border);
+  border-radius:var(--radius);padding:26px;
+  position:relative;overflow:hidden;
+  transition:transform .3s var(--ease),border-color .3s;
+}
+.cc::after{content:'';position:absolute;top:0;left:0;bottom:0;width:2px}
+.cc.c1::after{background:linear-gradient(to bottom,var(--purple),var(--purple2))}
+.cc.c2::after{background:linear-gradient(to bottom,var(--cyan),var(--cyan2))}
+.cc.c3::after{background:linear-gradient(to bottom,var(--red),#ff8fa3)}
+.cc.c4::after{background:linear-gradient(to bottom,var(--amber),#ffd280)}
+.cc:hover{transform:translateY(-3px);border-color:var(--border2)}
+.cc-num{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;margin-bottom:8px}
+.cc.c1 .cc-num{color:var(--purple2)}
+.cc.c2 .cc-num{color:var(--cyan2)}
+.cc.c3 .cc-num{color:var(--red)}
+.cc.c4 .cc-num{color:var(--amber)}
+.cc-title{font-family:'Lora',serif;font-size:17px;font-weight:700;color:var(--text);margin-bottom:10px;line-height:1.2}
+.cc-text{font-size:13.5px;color:var(--text2);line-height:1.75;font-weight:400}
+.cc-note{margin-top:14px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:var(--radius-sm);font-size:12px;color:var(--text3);font-style:italic;border-top:1px solid var(--border)}
+
+.exp-note{
+  margin-top:28px;padding:24px 28px;
+  background:var(--surf);border:1px solid var(--border2);border-radius:var(--radius);
+}
+.exp-note p{font-size:15px;color:var(--text2);line-height:1.8;font-weight:400}
+.exp-note strong{color:var(--text);font-family:'Lora',serif;font-weight:700}
+
+/* ══════════════════════════════════════════════════
+   S4 — LAB
+══════════════════════════════════════════════════ */
+.lab-grid{display:grid;grid-template-columns:1fr 320px;gap:36px;align-items:start}
+
+/* Phone mockup */
+.phone-wrap{display:flex;justify-content:center;padding-top:4px}
+.phone{
+  width:252px;height:472px;
+  background:#040414;border:1.5px solid var(--border2);border-radius:34px;
+  position:relative;overflow:hidden;
+  box-shadow:0 0 64px rgba(0,0,0,.7),0 0 0 1px rgba(109,79,255,.06),inset 0 0 40px rgba(0,0,0,.25);
+}
+.pnotch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:72px;height:22px;background:#040414;border-radius:100px;z-index:10}
+.pscreen{position:absolute;inset:0;display:flex;flex-direction:column;padding:52px 18px 18px}
+
+/* App UI */
+.aheader{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.aavatar{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--purple),var(--cyan));flex-shrink:0}
+.aname{font-size:12px;font-weight:600;color:#fff}
+.astatus{font-size:9px;color:var(--green);font-weight:500;margin-top:1px}
+
+.aprog{height:2px;background:rgba(255,255,255,.06);border-radius:100px;overflow:hidden;margin-bottom:12px;transition:opacity .35s var(--ease)}
+.aprog-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));border-radius:100px;transition:width .5s ease;width:0%}
+
+.acontent{flex:1;display:flex;flex-direction:column;gap:9px;overflow:hidden}
+.ablock{background:rgba(255,255,255,.04);border-radius:9px;padding:12px;border:1px solid rgba(255,255,255,.05);flex-shrink:0}
+.ablock-t{font-size:9.5px;font-weight:700;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.08em}
+.ablock-v{font-size:9.5px;color:var(--text2);line-height:1.5}
+
+.abtn{
+  margin-top:12px;padding:13px 10px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--purple),var(--purple2));
+  border:none;border-radius:9px;
+  color:#fff;font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .22s var(--ease);
+  width:100%;font-family:'DM Sans',sans-serif;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  touch-action:manipulation;min-height:42px;
+}
+.abtn:active{transform:scale(.96)}
+.abtn:disabled{opacity:.6;cursor:not-allowed}
+
+.atoast{
+  position:absolute;bottom:20px;left:10px;right:10px;
+  padding:10px 14px;background:var(--green);color:#000;
+  border-radius:9px;font-size:10.5px;font-weight:700;
+  transform:translateY(60px);
+  transition:transform .42s cubic-bezier(.34,1.4,.64,1),opacity .25s;
+  opacity:0;text-align:center;z-index:10;
+}
+.atoast.on{transform:translateY(0);opacity:1}
+.aspinner{
+  display:none;width:16px;height:16px;flex-shrink:0;
+  border:1.5px solid rgba(255,255,255,.2);border-top-color:#fff;
+  border-radius:50%;animation:spin .75s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Lab panel */
+.lab-panel{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+.lp-title{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;color:var(--cyan);letter-spacing:.1em;text-transform:uppercase;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+
+.lp-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border);gap:12px}
+.lp-row:last-of-type{border-bottom:none}
+.lp-label{font-size:13px;color:var(--text2);font-weight:500;line-height:1.3}
+.lp-sub{font-size:10.5px;color:var(--text3);margin-top:2px;line-height:1.3}
+
+/* Toggle */
+.tgl{
+  width:42px;height:23px;flex-shrink:0;
+  background:var(--surf2);border-radius:100px;
+  border:1px solid var(--border2);cursor:pointer;
+  position:relative;transition:all .25s var(--ease);
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  min-width:42px;
+}
+.tgl::after{
+  content:'';position:absolute;
+  width:17px;height:17px;
+  background:var(--text3);border-radius:50%;
+  top:2px;left:2px;transition:all .25s var(--ease);
+}
+.tgl.on{background:var(--purple);border-color:var(--purple);box-shadow:0 0 12px rgba(109,79,255,.3)}
+.tgl.on::after{transform:translateX(19px);background:#fff}
+
+/* Delay slider */
+.dslider{
+  width:100%;-webkit-appearance:none;appearance:none;
+  height:3px;border-radius:100px;background:var(--surf2);
+  margin-top:10px;cursor:pointer;outline:none;
+}
+.dslider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;
+  border-radius:50%;background:var(--cyan);cursor:pointer;
+  box-shadow:0 0 10px var(--cglow);
+}
+.dslider::-moz-range-thumb{
+  width:18px;height:18px;border-radius:50%;
+  background:var(--cyan);cursor:pointer;border:none;
+  box-shadow:0 0 10px var(--cglow);
+}
+
+.btn-reset{
+  width:100%;padding:12px;margin-top:14px;
+  background:transparent;border:1px solid var(--border2);
+  color:var(--text2);font-family:'DM Sans',sans-serif;
+  font-size:12.5px;border-radius:var(--radius-sm);cursor:pointer;
+  transition:all .25s var(--ease);min-height:44px;
+  touch-action:manipulation;
+}
+.btn-reset:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-reset:active{transform:scale(.97)}
+
+/* Experience meter */
+.exp-meter{margin-top:16px;padding:18px;background:var(--surf);border:1px solid var(--border);border-radius:var(--radius)}
+.em-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.13em;margin-bottom:10px;font-weight:700}
+.em-bar{height:5px;background:var(--surf2);border-radius:100px;overflow:hidden}
+.em-fill{height:100%;border-radius:100px;transition:all .6s var(--ease);width:100%;background:linear-gradient(90deg,var(--purple),var(--cyan))}
+.em-fill.med{background:linear-gradient(90deg,var(--amber),#ffcf6b);width:52%!important}
+.em-fill.bad{background:linear-gradient(90deg,#c00,var(--red));width:18%!important}
+.em-text{font-size:12px;color:var(--text2);margin-top:10px;line-height:1.5}
+
+.lab-callout{
+  margin-top:14px;padding:14px 16px;
+  background:rgba(0,212,255,.05);
+  border:1px solid rgba(0,212,255,.12);
+  border-radius:var(--radius-sm);
+  font-size:12.5px;color:var(--text2);line-height:1.68;
+}
+.lab-callout strong{color:var(--cyan2);font-weight:600}
+
+/* ══════════════════════════════════════════════════
+   S5 — CHOICE
+══════════════════════════════════════════════════ */
+.choice-wrap{max-width:620px;margin:0 auto;text-align:center}
+.choice-prompt{font-size:17px;color:var(--text2);margin-bottom:40px;line-height:1.65;font-weight:400}
+
+.choice-opts{
+  display:flex;gap:14px;justify-content:center;
+  align-items:flex-end;margin-bottom:36px;
+  flex-wrap:wrap;
+}
+.coption{
+  border-radius:var(--radius);border:1px solid var(--border);
+  cursor:pointer;transition:all .3s var(--ease);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+  font-family:'DM Sans',sans-serif;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  user-select:none;
+  pointer-events:all;
+}
+.coption:hover{transform:translateY(-5px)}
+.coption:active{transform:scale(.95)}
+
+.co-a{width:140px;height:140px;background:var(--surf);padding:18px}
+.co-b{
+  width:178px;height:178px;
+  background:linear-gradient(145deg,var(--purple),var(--purple2));
+  border-color:var(--purple2);
+  box-shadow:0 0 44px rgba(109,79,255,.32),0 10px 32px rgba(0,0,0,.5);
+  order:-1;
+}
+.co-c{width:140px;height:140px;background:var(--surf);padding:18px}
+
+.co-badge{
+  position:absolute;top:9px;right:9px;
+  padding:3px 7px;background:rgba(255,255,255,.1);
+  border-radius:3px;font-size:8px;
+  color:rgba(255,255,255,.65);font-weight:700;letter-spacing:.12em;
+}
+.co-b .co-badge{color:rgba(255,255,255,.95);background:rgba(255,255,255,.2)}
+
+.co-icon{font-size:22px;margin-bottom:8px;color:var(--purple2);line-height:1}
+.co-a .co-icon,.co-c .co-icon{color:var(--text3)}
+.co-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.2}
+.co-a .co-name,.co-c .co-name{color:var(--text2);font-size:12px}
+.co-price{font-size:11px;color:rgba(255,255,255,.55);margin-top:4px}
+.co-a .co-price,.co-c .co-price{color:var(--text3)}
+
+/* Reveal */
+.creveal{
+  display:none;text-align:left;padding:26px;
+  background:var(--surf);border:1px solid var(--border2);
+  border-radius:var(--radius);animation:fadeUp .45s var(--ease);
+}
+.creveal.on{display:block}
+.cr-title{font-family:'Lora',serif;font-size:19px;font-weight:700;color:var(--text);margin-bottom:12px;line-height:1.25}
+.cr-text{font-size:14px;color:var(--text2);line-height:1.82;font-weight:400}
+.rh{display:inline-block;padding:2px 7px;background:rgba(109,79,255,.2);border-radius:3px;color:var(--purple3);font-weight:600}
+.cr-stat{
+  display:flex;align-items:center;gap:16px;
+  margin-top:18px;padding:16px 20px;
+  background:rgba(109,79,255,.08);
+  border:1px solid rgba(109,79,255,.15);border-radius:var(--radius-sm);
+}
+.cr-num{font-family:'Lora',serif;font-size:32px;font-weight:900;color:var(--purple2);flex-shrink:0;line-height:1}
+.cr-txt{font-size:13px;color:var(--text2);line-height:1.55}
+
+/* ══════════════════════════════════════════════════
+   S_DOMINO — NEW SECTION: EFEITO DOMINÓ
+══════════════════════════════════════════════════ */
+#sdomino{background:radial-gradient(ellipse at 30% 50%,rgba(0,212,255,.04) 0%,transparent 60%)}
+
+.domino-wrap{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;margin-top:36px}
+.domino-controls{display:flex;flex-direction:column;gap:12px}
+
+.dctrl{
+  padding:14px 18px;
+  background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);
+  cursor:pointer;transition:all .28s var(--ease);
+  display:flex;align-items:center;gap:14px;
+  user-select:none;touch-action:manipulation;
+}
+.dctrl:hover{border-color:var(--border2);transform:translateX(4px)}
+.dctrl.active{border-color:var(--red);background:rgba(255,94,122,.06)}
+.dctrl.active:hover{transform:translateX(4px)}
+.dctrl-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+  background:var(--green);border:2px solid rgba(0,229,160,.3);
+  transition:all .3s var(--ease);
+  box-shadow:0 0 8px rgba(0,229,160,.4);
+}
+.dctrl.active .dctrl-dot{background:var(--red);border-color:rgba(255,94,122,.3);box-shadow:0 0 8px rgba(255,94,122,.4)}
+.dctrl-info{flex:1}
+.dctrl-title{font-size:13px;font-weight:600;color:var(--text);line-height:1.2}
+.dctrl-sub{font-size:11px;color:var(--text3);margin-top:2px;line-height:1.3}
+.dctrl-tag{font-size:9px;font-weight:700;letter-spacing:.1em;padding:3px 7px;border-radius:3px;flex-shrink:0;text-transform:uppercase}
+.dctrl.active .dctrl-tag{background:rgba(255,94,122,.15);color:var(--red)}
+.dctrl:not(.active) .dctrl-tag{background:rgba(0,229,160,.1);color:var(--green)}
+
+.domino-reset{
+  margin-top:4px;padding:12px;
+  background:transparent;border:1px solid var(--border2);
+  color:var(--text3);font-family:'DM Sans',sans-serif;
+  font-size:12px;border-radius:var(--radius-sm);cursor:pointer;
+  transition:all .25s var(--ease);text-align:center;
+}
+.domino-reset:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* Domino flow visualization */
+.domino-flow{display:flex;flex-direction:column;gap:0}
+.dflow-step{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:14px 0;
+  border-bottom:1px solid var(--border);
+  transition:all .4s var(--ease);
+  opacity:1;
+}
+.dflow-step:last-child{border-bottom:none}
+.dflow-line{display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:3px}
+.dflow-circle{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;flex-shrink:0;
+  transition:all .4s var(--ease);
+  border:1.5px solid;
+}
+.dflow-connector{width:1.5px;height:20px;background:var(--border);flex-shrink:0;transition:background .4s var(--ease)}
+.dflow-body{flex:1;min-width:0}
+.dflow-label{font-size:12.5px;font-weight:600;color:var(--text);line-height:1.3;transition:color .4s var(--ease)}
+.dflow-desc{font-size:11.5px;color:var(--text3);line-height:1.5;margin-top:3px;transition:color .4s var(--ease)}
+
+/* Step states: ok, affected, broken */
+.dflow-step.ok .dflow-circle{background:rgba(0,229,160,.1);border-color:var(--green);color:var(--green)}
+.dflow-step.affected .dflow-circle{background:rgba(255,179,71,.1);border-color:var(--amber);color:var(--amber)}
+.dflow-step.broken .dflow-circle{background:rgba(255,94,122,.12);border-color:var(--red);color:var(--red)}
+.dflow-step.broken .dflow-label{color:var(--red)}
+.dflow-step.broken .dflow-desc{color:rgba(255,94,122,.7)}
+.dflow-step.affected .dflow-label{color:var(--amber)}
+.dflow-step.ok .dflow-connector{background:rgba(0,229,160,.3)}
+.dflow-step.affected .dflow-connector{background:rgba(255,179,71,.3)}
+.dflow-step.broken .dflow-connector{background:rgba(255,94,122,.3)}
+
+/* Impact bar */
+.domino-impact{
+  margin-top:20px;padding:16px 18px;
+  background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);
+  transition:all .5s var(--ease);
+}
+.dimp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.dimp-label{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3)}
+.dimp-score{font-family:'Lora',serif;font-size:20px;font-weight:700;transition:color .4s var(--ease)}
+.dimp-bar{height:4px;background:var(--surf2);border-radius:100px;overflow:hidden;margin-bottom:10px}
+.dimp-fill{height:100%;border-radius:100px;transition:width .7s cubic-bezier(.34,1.2,.64,1),background .5s var(--ease);background:linear-gradient(90deg,var(--purple),var(--green));width:0%}
+.dimp-text{font-size:12px;color:var(--text2);line-height:1.5;transition:color .4s var(--ease)}
+
+/* Score states */
+.domino-impact.good .dimp-score{color:var(--green)}
+.domino-impact.med .dimp-score{color:var(--amber)}
+.domino-impact.bad .dimp-score{color:var(--red)}
+.domino-impact.good .dimp-fill{background:linear-gradient(90deg,var(--purple),var(--green))}
+.domino-impact.med .dimp-fill{background:linear-gradient(90deg,var(--amber),#ffcf6b)}
+.domino-impact.bad .dimp-fill{background:linear-gradient(90deg,#c00,var(--red))}
+
+/* ══════════════════════════════════════════════════
+   S6 — OUTRO
+══════════════════════════════════════════════════ */
+#s6{text-align:center;background:radial-gradient(ellipse at 50% 0%,rgba(109,79,255,.08) 0%,transparent 60%)}
+.outro-title{font-size:clamp(26px,4.5vw,54px);font-weight:900;color:var(--text);margin-bottom:16px;line-height:1.1}
+.outro-title span{background:linear-gradient(135deg,var(--purple2),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.outro-sub{font-size:16px;color:var(--text2);max-width:500px;margin:0 auto 48px;line-height:1.78;font-weight:400}
+
+.takes{display:flex;flex-direction:column;gap:10px;max-width:580px;margin:0 auto 48px;text-align:left}
+.take{
+  display:grid;grid-template-columns:56px 1fr;
+  background:var(--surf);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  transition:border-color .25s var(--ease),transform .25s var(--ease);
+}
+.take:hover{border-color:var(--border2);transform:translateX(2px)}
+.take-n{
+  background:rgba(109,79,255,.12);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Lora',serif;font-size:15px;font-weight:900;
+  color:var(--purple2);padding:22px 0;
+  min-width:56px;
+}
+.take-body{padding:20px 22px;font-size:14px;color:var(--text2);line-height:1.72;font-weight:400}
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE — MOBILE
+══════════════════════════════════════════════════ */
+@media(max-width:720px){
+  .sec{padding:72px 20px}
+  #s1{padding-top:80px}
+  .mgrid{grid-template-columns:repeat(4,1fr);gap:7px}
+  .ct{font-size:11px}
+  .cd{font-size:9.5px}
+  .cem{font-size:18px}
+  .stats-bar{overflow-x:auto}
+  .si{min-width:80px;padding:12px 10px}
+  .cgrid{grid-template-columns:1fr}
+  .lab-grid{grid-template-columns:1fr}
+  .phone-wrap{order:1}
+  .phone{width:220px;height:410px}
+  .choice-opts{flex-direction:column;align-items:center;gap:12px}
+  .co-b{order:0;width:200px;height:200px}
+  .co-a,.co-c{width:200px;height:160px}
+  .takes{max-width:100%}
+  .take{grid-template-columns:44px 1fr}
+  .take-body{padding:16px 18px;font-size:13.5px}
+  #nav{display:none}
+  .lvl-tabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+  .hero-sub{display:none}
+  .domino-wrap{grid-template-columns:1fr}
+}
+
+@media(max-width:400px){
+  .mgrid{grid-template-columns:repeat(4,1fr);gap:5px}
+  .ct{font-size:10px}
+  .cem{font-size:15px}
+  .si{padding:10px 8px}
+  .sv{font-size:17px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bgc"></canvas>
+<div id="prog" style="width:0%"></div>
+
+<nav id="nav">
+  <div class="nd on" onclick="goto(0)" title="Início"></div>
+  <div class="nd" onclick="goto(1)" title="Jogo"></div>
+  <div class="nd" onclick="goto(2)" title="Análise"></div>
+  <div class="nd" onclick="goto(3)" title="Laboratório"></div>
+  <div class="nd" onclick="goto(4)" title="Efeito Dominó"></div>
+  <div class="nd" onclick="goto(5)" title="Escolha"></div>
+  <div class="nd" onclick="goto(6)" title="Conclusão"></div>
+</nav>
+
+<!-- ══ S1 — HERO ══════════════════════════════════ -->
+<section class="sec" id="s1">
+  <div style="max-width:680px">
+    <p class="hero-kicker">experiência interativa</p>
+    <h1 class="hero-title">Decisões que<br>o usuário <span>não vê</span></h1>
+    <p class="hero-sub-big">Como interfaces moldam comportamento sem que percebamos</p>
+    <p class="hero-sub">Cada clique, cada animação e cada milissegundo de resposta é uma decisão de produto. Aqui você vai vivenciar esses princípios na prática: não apenas ler sobre eles.</p>
+    <button class="btn" onclick="goto(1)">
+      <span>Começar experiência</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+  <div class="scroll-hint" aria-hidden="true">explorar</div>
+</section>
+
+<hr class="div">
+
+<!-- ══ S2 — GAME ══════════════════════════════════ -->
+<section class="sec" id="s2">
+  <div class="wrap">
+    <div class="label" aria-label="Etapa 1 de 4">etapa 1 de 4</div>
+    <h2 class="sec-title">Jogo de Associação</h2>
+    <p class="sec-desc">Encontre os pares que fazem sentido juntos. Não procure elementos idênticos: procure relações de causa e efeito.</p>
+
+    <div class="game-intro" role="note">
+      <div class="game-intro-icon" aria-hidden="true">▸</div>
+      <p><strong>Como funciona:</strong> clique em um card para revelá-lo, depois em outro. Os pares <strong>não são elementos iguais</strong>: são relações de causa e efeito. Por exemplo, "tempo de espera" se conecta com "frustração". Procure a lógica entre os dois conceitos. Uma explicação aparece a cada acerto.</p>
+    </div>
+
+    <div class="lvl-tabs" role="tablist">
+      <button class="lt on" id="lt1" role="tab" aria-selected="true" onclick="loadLvl(1)">Nível 1</button>
+      <button class="lt" id="lt2" role="tab" aria-selected="false" onclick="loadLvl(2)" disabled>Nível 2</button>
+      <button class="lt" id="lt3" role="tab" aria-selected="false" onclick="loadLvl(3)" disabled>Nível 3</button>
+    </div>
+
+    <div class="stats-bar" role="status" aria-live="polite">
+      <div class="si"><span class="sl">pares</span><span class="sv" id="g-hits">0</span></div>
+      <div class="si"><span class="sl">tentativas</span><span class="sv" id="g-tries">0</span></div>
+      <div class="si"><span class="sl">tempo</span><span class="sv" id="g-time">0s</span></div>
+      <div class="si"><span class="sl">nível</span><span class="sv" id="g-lvl">1</span></div>
+    </div>
+
+    <div class="mgrid" id="mgrid" role="grid" aria-label="Cartas do jogo"></div>
+    <div class="insight" id="insight" role="status" aria-live="polite"></div>
+
+    <div class="lsummary" id="lsummary">
+      <p class="lsum-title" id="lsum-title"></p>
+      <p class="lsum-sub" id="lsum-sub"></p>
+      <div class="schart" id="schart" aria-hidden="true"></div>
+      <button class="btn" id="lsum-btn"><span id="lsum-btn-txt">Próximo nível</span></button>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══ S3 — EXPLAIN ═══════════════════════════════ -->
+<section class="sec" id="s3">
+  <div class="wrap">
+    <div class="label">etapa 2 de 4</div>
+    <h2 class="sec-title">O que aconteceu no jogo</h2>
+    <p class="sec-desc">Cada par que você encontrou representa um princípio real de comportamento em interfaces. Veja o que estava acontecendo enquanto você jogava.</p>
+
+    <div class="cgrid">
+      <div class="cc c1">
+        <div class="cc-num">princípio 01</div>
+        <div class="cc-title">Resposta imediata</div>
+        <div class="cc-text">Quando o card virou ao instante do clique, seu cérebro registrou a ação como bem-sucedida. Respostas abaixo de 100ms criam a percepção de fluidez. Acima disso, a experiência começa a parecer travada, mesmo que tudo esteja funcionando.</div>
+        <div class="cc-note">No jogo: cada card virou em menos de 200ms. Qualquer atraso quebraria o ritmo da interação.</div>
+      </div>
+      <div class="cc c2">
+        <div class="cc-num">princípio 02</div>
+        <div class="cc-title">Progresso visível</div>
+        <div class="cc-text">O contador de pares e o timer não eram decoração. Eles criavam um estado de referência que motivava a continuar. Em interfaces, saber quanto já foi feito é tão importante quanto saber quanto falta.</div>
+        <div class="cc-note">No jogo: você sabia exatamente em que ponto estava em cada momento.</div>
+      </div>
+      <div class="cc c3">
+        <div class="cc-num">princípio 03</div>
+        <div class="cc-title">Custo do atraso</div>
+        <div class="cc-text">Quando dois cards errados ficaram sem sinal visual por um instante, surgiu incerteza. Pesquisas mostram que atrasos acima de 1 segundo fazem o usuário questionar se a ação funcionou, antes mesmo de qualquer mensagem de erro aparecer.</div>
+        <div class="cc-note">Você vai experimentar isso na próxima etapa, com controle total sobre o atraso.</div>
+      </div>
+      <div class="cc c4">
+        <div class="cc-num">princípio 04</div>
+        <div class="cc-title">Feedback como orientação</div>
+        <div class="cc-text">A animação de erro nos cards incorretos não punia: ela orientava. Saber que errou imediatamente é preferível a não receber sinal algum. Interfaces bem projetadas confirmam cada ação, certa ou errada.</div>
+        <div class="cc-note">Sem esse sinal visual, você teria tentado o mesmo par novamente.</div>
+      </div>
+    </div>
+
+    <div class="exp-note">
+      <p><strong>A combinação desses quatro princípios</strong> define o que chamamos de experiência fluida. Quando um deles está ausente, algo parece "errado", mesmo que o usuário não consiga identificar exatamente o quê. Na próxima etapa, você vai modificar cada um e observar o efeito em tempo real.</p>
+    </div>
+
+    <div style="text-align:center;margin-top:32px">
+      <button class="btn" onclick="goto(3)">
+        <span>Acessar o laboratório</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══ S4 — LAB ═══════════════════════════════════ -->
+<section class="sec" id="s4">
+  <div class="wrap">
+    <div class="label">etapa 3 de 4</div>
+    <h2 class="sec-title">Laboratório de Experiência</h2>
+    <p class="sec-desc" style="margin-bottom:36px">Use os controles para remover elementos da interface. Observe como cada mudança altera a percepção do app e o que você sente ao usá-lo.</p>
+
+    <div class="lab-grid">
+      <!-- Phone -->
+      <div class="phone-wrap">
+        <div class="phone" role="img" aria-label="Simulador de aplicativo móvel">
+          <div class="pnotch" aria-hidden="true"></div>
+          <div class="pscreen">
+            <div class="aheader">
+              <div class="aavatar" aria-hidden="true"></div>
+              <div>
+                <div class="aname">FinanceApp</div>
+                <div class="astatus" id="astatus">online</div>
+              </div>
+            </div>
+            <div class="aprog" id="aprog" aria-hidden="true">
+              <div class="aprog-fill" id="aprog-fill"></div>
+            </div>
+            <div class="acontent">
+              <div class="ablock">
+                <div class="ablock-t">Saldo disponível</div>
+                <div class="ablock-v" style="font-size:17px;color:#fff;font-weight:700;line-height:1.2">R$ 4.280,00</div>
+              </div>
+              <div class="ablock">
+                <div class="ablock-t">Última transação</div>
+                <div class="ablock-v">Supermercado Central&nbsp;&nbsp;R$ 124,50</div>
+              </div>
+            </div>
+            <button class="abtn" id="abtn" onclick="labAct()" aria-label="Fazer transferência">
+              <span id="abtn-txt">Transferir agora</span>
+              <div class="aspinner" id="aspinner" aria-hidden="true"></div>
+            </button>
+            <div class="atoast" id="atoast" role="status">Transferência enviada com sucesso</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div>
+        <div class="lab-panel">
+          <div class="lp-title">Configurações da experiência</div>
+
+          <div class="lp-row">
+            <div>
+              <div class="lp-label">Atraso de resposta</div>
+              <div class="lp-sub" id="delay-lbl">0 ms: instantâneo</div>
+            </div>
+          </div>
+          <input type="range" class="dslider" id="dslider" min="0" max="4" value="0"
+            aria-label="Ajustar atraso de resposta"
+            oninput="updDelay(this.value)">
+
+          <div class="lp-row" style="margin-top:6px">
+            <div>
+              <div class="lp-label">Barra de progresso</div>
+              <div class="lp-sub">indica que algo está acontecendo</div>
+            </div>
+            <div class="tgl on" id="tgl-prog" role="switch" aria-checked="true"
+              onclick="togCtrl('prog')" aria-label="Ativar barra de progresso"></div>
+          </div>
+
+          <div class="lp-row">
+            <div>
+              <div class="lp-label">Confirmação de ação</div>
+              <div class="lp-sub">notificação após execução</div>
+            </div>
+            <div class="tgl on" id="tgl-toast" role="switch" aria-checked="true"
+              onclick="togCtrl('toast')" aria-label="Ativar confirmação de ação"></div>
+          </div>
+
+          <div class="lp-row">
+            <div>
+              <div class="lp-label">Animação de clique</div>
+              <div class="lp-sub">resposta visual ao toque</div>
+            </div>
+            <div class="tgl on" id="tgl-anim" role="switch" aria-checked="true"
+              onclick="togCtrl('anim')" aria-label="Ativar animação de clique"></div>
+          </div>
+
+          <button class="btn-reset" onclick="labReset()">Reiniciar experiência</button>
+        </div>
+
+        <div class="exp-meter">
+          <div class="em-label">Qualidade percebida</div>
+          <div class="em-bar" role="progressbar" aria-label="Qualidade da experiência">
+            <div class="em-fill" id="emfill"></div>
+          </div>
+          <div class="em-text" id="emtxt">Experiência completa: todos os elementos ativos</div>
+        </div>
+
+        <div class="lab-callout" id="lab-hint">
+          <strong>Experimente:</strong> desative apenas a barra de progresso e clique no botão. Observe como a ausência de um único elemento muda o que você sente em relação ao app.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══ S_DOMINO — EFEITO DOMINÓ ═══════════════════ -->
+<section class="sec" id="sdomino">
+  <div class="wrap">
+    <div class="label">bônus: aprofundamento</div>
+    <h2 class="sec-title">O Efeito Dominó</h2>
+    <p class="sec-desc">Uma única falha silenciosa pode comprometer toda a jornada. Ative os problemas abaixo e observe como a saúde da experiência cai e como as falhas se propagam pelo fluxo.</p>
+
+    <div class="domino-wrap">
+      <!-- Controls -->
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;">Introduzir problema</div>
+        <div class="domino-controls" id="domino-controls">
+
+          <div class="dctrl" id="dc-slow" onclick="toggleFault('slow')">
+            <div class="dctrl-dot"></div>
+            <div class="dctrl-info">
+              <div class="dctrl-title">API lenta (3s+)</div>
+              <div class="dctrl-sub">carregamento sem feedback visual</div>
+            </div>
+            <div class="dctrl-tag">OK</div>
+          </div>
+
+          <div class="dctrl" id="dc-noerror" onclick="toggleFault('noerror')">
+            <div class="dctrl-dot"></div>
+            <div class="dctrl-info">
+              <div class="dctrl-title">Erro sem mensagem</div>
+              <div class="dctrl-sub">falha silenciosa na ação do usuário</div>
+            </div>
+            <div class="dctrl-tag">OK</div>
+          </div>
+
+          <div class="dctrl" id="dc-nostate" onclick="toggleFault('nostate')">
+            <div class="dctrl-dot"></div>
+            <div class="dctrl-info">
+              <div class="dctrl-title">Estado vazio sem guia</div>
+              <div class="dctrl-sub">tela em branco sem orientação</div>
+            </div>
+            <div class="dctrl-tag">OK</div>
+          </div>
+
+          <div class="dctrl" id="dc-noprogress" onclick="toggleFault('noprogress')">
+            <div class="dctrl-dot"></div>
+            <div class="dctrl-info">
+              <div class="dctrl-title">Progresso invisível</div>
+              <div class="dctrl-sub">onboarding sem indicador de etapas</div>
+            </div>
+            <div class="dctrl-tag">OK</div>
+          </div>
+
+        </div>
+
+        <button class="domino-reset" onclick="resetFaults()">Restaurar todos</button>
+
+        <!-- Impact meter -->
+        <div class="domino-impact good" id="dimp">
+          <div class="dimp-header">
+            <div class="dimp-label">Saude da experiência</div>
+            <div class="dimp-score" id="dimp-score">100%</div>
+          </div>
+          <div class="dimp-bar"><div class="dimp-fill" id="dimp-fill"></div></div>
+          <div class="dimp-text" id="dimp-text">Experiência saudável: o usuário completa a jornada com confiança.</div>
+        </div>
+      </div>
+
+      <!-- Flow visualization -->
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;">Jornada do usuário</div>
+        <div class="domino-flow" id="domino-flow">
+          <div class="dflow-step ok" id="df-load">
+            <div class="dflow-line">
+              <div class="dflow-circle">1</div>
+              <div class="dflow-connector"></div>
+            </div>
+            <div class="dflow-body">
+              <div class="dflow-label">Carregamento inicial</div>
+              <div class="dflow-desc" id="dfd-load">Dados carregados rapidamente. Confiança estabelecida.</div>
+            </div>
+          </div>
+          <div class="dflow-step ok" id="df-action">
+            <div class="dflow-line">
+              <div class="dflow-circle">2</div>
+              <div class="dflow-connector"></div>
+            </div>
+            <div class="dflow-body">
+              <div class="dflow-label">Primeira ação do usuário</div>
+              <div class="dflow-desc" id="dfd-action">Resposta imediata com feedback visual claro.</div>
+            </div>
+          </div>
+          <div class="dflow-step ok" id="df-empty">
+            <div class="dflow-line">
+              <div class="dflow-circle">3</div>
+              <div class="dflow-connector"></div>
+            </div>
+            <div class="dflow-body">
+              <div class="dflow-label">Estado inicial do produto</div>
+              <div class="dflow-desc" id="dfd-empty">Conteúdo ou guia presente. Usuário sabe como avançar.</div>
+            </div>
+          </div>
+          <div class="dflow-step ok" id="df-onboard">
+            <div class="dflow-line">
+              <div class="dflow-circle">4</div>
+              <div class="dflow-connector"></div>
+            </div>
+            <div class="dflow-body">
+              <div class="dflow-label">Onboarding</div>
+              <div class="dflow-desc" id="dfd-onboard">Progresso visível. Usuário completa as etapas.</div>
+            </div>
+          </div>
+          <div class="dflow-step ok" id="df-retain">
+            <div class="dflow-line">
+              <div class="dflow-circle">5</div>
+              <div style="height:0"></div>
+            </div>
+            <div class="dflow-body">
+              <div class="dflow-label">Retenção na semana 1</div>
+              <div class="dflow-desc" id="dfd-retain">Hábito formado. Usuário retorna ao produto.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:36px">
+      <button class="btn" onclick="goto(5)">
+        <span>Continuar para Arquitetura de Escolha</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══ S5 — CHOICE ════════════════════════════════ -->
+<section class="sec" id="s5">
+  <div class="wrap">
+    <div class="label">etapa 4 de 4</div>
+    <h2 class="sec-title" style="text-align:center;margin-bottom:12px">Arquitetura de Escolha</h2>
+
+    <div class="choice-wrap">
+      <p class="choice-prompt">Você quer contratar um plano de assinatura. Qual você escolhe?</p>
+
+      <div class="choice-opts" id="copts" role="group" aria-label="Opções de plano">
+        <div class="coption co-a" onclick="pick('a')" role="button" tabindex="0"
+          aria-label="Plano Starter, R$ 29 por mês" onkeydown="if(event.key==='Enter')pick('a')">
+          <span class="co-badge">BÁSICO</span>
+          <div class="co-icon" aria-hidden="true">▲</div>
+          <div class="co-name">Starter</div>
+          <div class="co-price">R$ 29/mês</div>
+        </div>
+        <div class="coption co-b" onclick="pick('b')" role="button" tabindex="0"
+          aria-label="Plano Pro, R$ 59 por mês, mais popular" onkeydown="if(event.key==='Enter')pick('b')">
+          <span class="co-badge">MAIS POPULAR</span>
+          <div class="co-icon" style="color:#fff;font-size:24px" aria-hidden="true">◆</div>
+          <div class="co-name">Pro</div>
+          <div class="co-price">R$ 59/mês</div>
+        </div>
+        <div class="coption co-c" onclick="pick('c')" role="button" tabindex="0"
+          aria-label="Plano Enterprise, R$ 199 por mês" onkeydown="if(event.key==='Enter')pick('c')">
+          <span class="co-badge">AVANÇADO</span>
+          <div class="co-icon" aria-hidden="true">■</div>
+          <div class="co-name">Enterprise</div>
+          <div class="co-price">R$ 199/mês</div>
+        </div>
+      </div>
+
+      <div class="creveal" id="creveal" role="region" aria-label="Resultado da escolha">
+        <div class="cr-title" id="cr-title"></div>
+        <div class="cr-text" id="cr-text"></div>
+        <div class="cr-stat">
+          <div class="cr-num" id="cr-num"></div>
+          <div class="cr-txt" id="cr-txt"></div>
+        </div>
+        <p style="font-size:12.5px;color:var(--text3);margin-top:14px;line-height:1.6">Clique em outra opção para ver uma explicação diferente, ou avance para a conclusão.</p>
+        <div style="margin-top:18px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button class="btn-ghost" onclick="resetChoice()" aria-label="Limpar seleção">Limpar seleção</button>
+          <button class="btn" onclick="goto(6)">
+            <span>Ver conclusão</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══ S6 — OUTRO ════════════════════════════════ -->
+<section class="sec" id="s6">
+  <div class="wrap">
+    <div class="label" style="justify-content:center">o que você aprendeu</div>
+    <h2 class="outro-title">Produto é <span>comportamento</span> aplicado</h2>
+    <p class="outro-sub">Cada pixel, cada transição e cada milissegundo de resposta é uma decisão. E decisões de produto moldam decisões humanas.</p>
+
+    <div class="takes">
+      <div class="take">
+        <div class="take-n">01</div>
+        <div class="take-body">Feedback imediato não é um detalhe técnico. É o que diferencia um produto que "funciona" de um produto que "parece bom". Usuários sentem atrasos antes de conseguirem articulá-los.</div>
+      </div>
+      <div class="take">
+        <div class="take-n">02</div>
+        <div class="take-body">Progresso visível sustenta engajamento. A barra de carregamento não transmite informação, transmite segurança. Removida, o usuário começa a questionar se a ação foi registrada.</div>
+      </div>
+      <div class="take">
+        <div class="take-n">03</div>
+        <div class="take-body">Uma única falha silenciosa compromete toda a jornada. O efeito dominó é real: o que parece um problema isolado contamina a percepção de todo o produto.</div>
+      </div>
+      <div class="take">
+        <div class="take-n">04</div>
+        <div class="take-body">Hierarquia visual orienta decisões. Destacar uma opção facilita uma escolha que o produto já antecipou como mais provável. O design pode guiar sem restringir.</div>
+      </div>
+      <div class="take">
+        <div class="take-n">05</div>
+        <div class="take-body">Usuários raramente sabem por que preferem um produto. Eles sentem. O trabalho de produto é projetar essa sensação antes do primeiro clique.</div>
+      </div>
+    </div>
+
+    <div style="text-align:center">
+      <button class="btn-ghost" onclick="goto(0)">Recomeçar do início</button>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ── CANVAS ──────────────────────────────────────── */
+const cv = document.getElementById('bgc');
+const ct = cv.getContext('2d');
+let W, H, pts = [];
+
+function rsz() { W = cv.width = innerWidth; H = cv.height = innerHeight; }
+function initPts() {
+  pts = [];
+  for (let i = 0; i < 45; i++) {
+    pts.push({
+      x: Math.random() * W, y: Math.random() * H,
+      r: Math.random() * 1.3 + 0.3,
+      vx: (Math.random() - .5) * .18, vy: (Math.random() - .5) * .18,
+      a: Math.random() * .28 + .06, c: Math.random() > .5
+    });
+  }
+}
+function drawBg() {
+  ct.clearRect(0, 0, W, H);
+  ct.strokeStyle = 'rgba(109,79,255,0.04)'; ct.lineWidth = 1;
+  for (let x = 0; x < W; x += 80) { ct.beginPath(); ct.moveTo(x, 0); ct.lineTo(x, H); ct.stroke(); }
+  for (let y = 0; y < H; y += 80) { ct.beginPath(); ct.moveTo(0, y); ct.lineTo(W, y); ct.stroke(); }
+  pts.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+    if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+    ct.beginPath(); ct.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ct.fillStyle = p.c ? `rgba(0,212,255,${p.a})` : `rgba(155,123,255,${p.a})`;
+    ct.fill();
+  });
+  const g = ct.createRadialGradient(W * .15, H * .2, 0, W * .15, H * .2, 300);
+  g.addColorStop(0, 'rgba(109,79,255,0.06)'); g.addColorStop(1, 'transparent');
+  ct.fillStyle = g; ct.fillRect(0, 0, W, H);
+  const g2 = ct.createRadialGradient(W * .85, H * .75, 0, W * .85, H * .75, 240);
+  g2.addColorStop(0, 'rgba(0,212,255,0.04)'); g2.addColorStop(1, 'transparent');
+  ct.fillStyle = g2; ct.fillRect(0, 0, W, H);
+  requestAnimationFrame(drawBg);
+}
+window.addEventListener('resize', () => { rsz(); initPts(); });
+rsz(); initPts(); drawBg();
+
+/* ── NAVIGATION ──────────────────────────────────── */
+const sids = ['s1', 's2', 's3', 's4', 'sdomino', 's5', 's6'];
+function goto(i) {
+  document.getElementById(sids[i]).scrollIntoView({ behavior: 'smooth' });
+}
+function updNav() {
+  const mid = scrollY + innerHeight * .45;
+
+  // Progress bar: based on sections, reaches 100% when last section is active
+  const sections = sids.map(id => document.getElementById(id));
+  const first = sections[0];
+  const last = sections[sections.length - 1];
+  const totalRange = (last.offsetTop + last.offsetHeight) - first.offsetTop;
+  const scrolled = scrollY + innerHeight * .5 - first.offsetTop;
+  const pct = Math.min(100, Math.max(0, (scrolled / totalRange) * 100));
+  document.getElementById('prog').style.width = pct + '%';
+
+  sids.forEach((id, i) => {
+    const el = document.getElementById(id);
+    const dot = document.querySelectorAll('.nd')[i];
+    if(dot) dot.classList.toggle('on', mid >= el.offsetTop && mid < el.offsetTop + el.offsetHeight);
+  });
+}
+window.addEventListener('scroll', updNav, { passive: true });
+
+/* ── GAME DATA ───────────────────────────────────── */
+const levels = [
+  [
+    { id: 'a1', icon: '◈', title: 'Clique rápido',     desc: 'ação do usuário',        pair: 'b1' },
+    { id: 'b1', icon: '◉', title: 'Resposta imediata', desc: 'confirma a ação',         pair: 'a1' },
+    { id: 'a2', icon: '◫', title: 'Progresso visível', desc: 'indica avanço',           pair: 'b2' },
+    { id: 'b2', icon: '◬', title: 'Vontade de continuar', desc: 'motivação gerada',     pair: 'a2' },
+    { id: 'a3', icon: '◭', title: 'Tempo de espera',   desc: 'atraso inesperado',       pair: 'b3' },
+    { id: 'b3', icon: '◮', title: 'Frustração',        desc: 'quebra o ritmo',          pair: 'a3' },
+    { id: 'a4', icon: '◯', title: 'Sem feedback',      desc: 'nenhum sinal visual',     pair: 'b4' },
+    { id: 'b4', icon: '◎', title: 'Confusão',          desc: 'ação sem confirmação',    pair: 'a4' },
+  ],
+  [
+    { id: 'c1', icon: '▣', title: 'Microanimação',       desc: 'toque visual sutil',    pair: 'd1' },
+    { id: 'd1', icon: '▤', title: 'Engajamento',         desc: 'atenção mantida',        pair: 'c1' },
+    { id: 'c2', icon: '▥', title: 'Recompensa visual',   desc: 'badge de conquista',    pair: 'd2' },
+    { id: 'd2', icon: '▦', title: 'Retorno ao app',      desc: 'hábito formado',        pair: 'c2' },
+    { id: 'c3', icon: '▧', title: 'Notificação oportuna',desc: 'momento certo',         pair: 'd3' },
+    { id: 'd3', icon: '▨', title: 'Abertura do app',     desc: 'ação imediata',         pair: 'c3' },
+    { id: 'c4', icon: '▩', title: 'Tela em branco',      desc: 'sem carregamento',      pair: 'd4' },
+    { id: 'd4', icon: '▪', title: 'Abandono',            desc: 'usuário encerra',       pair: 'c4' },
+  ],
+  [
+    { id: 'e1', icon: '◆', title: 'Cor de destaque',       desc: 'botão principal',      pair: 'f1' },
+    { id: 'f1', icon: '◇', title: 'Hierarquia visual',     desc: 'direciona o olhar',    pair: 'e1' },
+    { id: 'e2', icon: '◈', title: 'Variável imprevisível', desc: 'recompensa aleatória', pair: 'f2' },
+    { id: 'f2', icon: '◉', title: 'Scroll contínuo',       desc: 'sem ponto de parada',  pair: 'e2' },
+    { id: 'e3', icon: '◊', title: 'Onboarding simples',    desc: 'primeiros passos fáceis', pair: 'f3' },
+    { id: 'f3', icon: '○', title: 'Adoção do produto',     desc: 'hábito na 1ª semana', pair: 'e3' },
+    { id: 'e4', icon: '●', title: 'Modo escuro elegante',  desc: 'conforto visual',      pair: 'f4' },
+    { id: 'f4', icon: '◐', title: 'Sessões mais longas',   desc: 'menor cansaço visual', pair: 'e4' },
+  ]
+];
+
+const insights = {
+  a1: 'Respostas abaixo de 100ms parecem instantâneas ao sistema nervoso humano. Esse limiar define a sensação de fluidez em interfaces.',
+  a2: 'O "efeito de progresso dotado" mostra que já ter avançado algo é mais motivador do que a meta em si.',
+  a3: 'Jakob Nielsen documentou que 1 segundo é o limite para manter o fluxo de atenção sem perda de contexto.',
+  a4: 'Ausência de feedback é como um formulário sem mensagem de erro: o usuário não sabe se está no caminho certo.',
+  c1: 'Microanimações bem aplicadas aumentam a percepção de qualidade sem custo mensurável de performance.',
+  c2: 'Sistemas de recompensa visual ativam os mesmos mecanismos cognitivos que conquistas físicas.',
+  c3: 'Uma notificação no momento errado é percebida como interrupção. No momento certo, como serviço.',
+  c4: 'A tela em branco é o principal ponto de abandono em onboarding. Ausência de conteúdo é interpretada como falha.',
+  e1: 'Estudos de eye-tracking mostram que a cor do botão principal direciona o próximo clique antes da leitura consciente.',
+  e2: 'O scroll infinito remove o ponto natural de pausa, transferindo a decisão de encerrar para o usuário.',
+  e3: 'Os primeiros 3 minutos de uso determinam a retenção na semana 2. Onboarding é produto, não tutorial.',
+  e4: 'O modo escuro está associado a sessões mais longas em apps de conteúdo, por reduzir a fadiga ocular.',
+};
+
+/* ── GAME STATE ──────────────────────────────────── */
+let curLvl = 1;
+let flipped = [];
+let matched = [];
+let tries = 0;
+let hits = 0;
+let startT = null;
+let timerInt = null;
+let lvlTimes = [null, null, null];
+let locked = false;
+let insightTimer = null;
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - .5); }
+
+function loadLvl(n) {
+  curLvl = n;
+  flipped = [];
+  matched = [];
+  tries = 0;
+  hits = 0;
+  locked = false;
+  clearInterval(timerInt);
+  timerInt = null;
+  startT = null;
+  clearTimeout(insightTimer);
+
+  document.getElementById('g-hits').textContent = '0';
+  document.getElementById('g-tries').textContent = '0';
+  document.getElementById('g-time').textContent = '0s';
+  document.getElementById('g-lvl').textContent = n;
+
+  const insEl = document.getElementById('insight');
+  insEl.classList.remove('on');
+  insEl.innerHTML = '';
+
+  const summaryEl = document.getElementById('lsummary');
+  summaryEl.classList.remove('on');
+
+  const grid = document.getElementById('mgrid');
+  grid.style.display = 'grid';
+  grid.innerHTML = '';
+
+  shuffle(levels[n - 1]).forEach(card => {
+    const el = document.createElement('div');
+    el.className = 'mc';
+    el.dataset.id = card.id;
+    el.dataset.pair = card.pair;
+    el.setAttribute('role', 'gridcell');
+    el.setAttribute('aria-label', 'Carta oculta');
+    el.setAttribute('tabindex', '0');
+    el.innerHTML = `
+      <div class="cf cb"><div class="ci" aria-hidden="true">◆</div></div>
+      <div class="cf cv">
+        <div class="cem" aria-hidden="true">${card.icon}</div>
+        <div class="ct">${card.title}</div>
+        <div class="cd">${card.desc}</div>
+      </div>`;
+    el.addEventListener('click', () => flipCard(el));
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flipCard(el); } });
+    grid.appendChild(el);
+  });
+
+  document.querySelectorAll('.lt').forEach((t, i) => {
+    t.classList.toggle('on', i + 1 === n);
+    t.setAttribute('aria-selected', i + 1 === n ? 'true' : 'false');
+  });
+}
+
+function flipCard(el) {
+  if (locked) return;
+  if (el.classList.contains('fl') || el.classList.contains('mt')) return;
+  if (flipped.length >= 2) return;
+
+  if (!startT) {
+    startT = Date.now();
+    timerInt = setInterval(() => {
+      const s = Math.floor((Date.now() - startT) / 1000);
+      document.getElementById('g-time').textContent = s + 's';
+    }, 1000);
+  }
+
+  el.classList.add('fl');
+  el.setAttribute('aria-label', el.querySelector('.ct').textContent);
+  flipped.push(el);
+
+  if (flipped.length === 2) {
+    tries++;
+    document.getElementById('g-tries').textContent = tries;
+    locked = true;
+    setTimeout(checkMatch, 1400);
+  }
+}
+
+function checkMatch() {
+  const [a, b] = flipped;
+  const ok = a.dataset.pair === b.dataset.id || b.dataset.pair === a.dataset.id;
+
+  if (ok) {
+    hits++;
+    document.getElementById('g-hits').textContent = hits;
+    // Remove fl before adding mt so no hover conflict
+    a.classList.remove('fl');
+    b.classList.remove('fl');
+    a.classList.add('mt');
+    b.classList.add('mt');
+    a.setAttribute('aria-label', a.querySelector('.ct').textContent + ': par encontrado');
+    b.setAttribute('aria-label', b.querySelector('.ct').textContent + ': par encontrado');
+    matched.push(a.dataset.id, b.dataset.id);
+
+    const insText = insights[a.dataset.id] || insights[b.dataset.id] || '';
+    if (insText) {
+      clearTimeout(insightTimer);
+      insightTimer = setTimeout(() => {
+        const insEl = document.getElementById('insight');
+        insEl.innerHTML = `<strong>Conexão identificada:</strong> ${insText}`;
+        insEl.classList.add('on');
+        clearTimeout(insightTimer);
+        insightTimer = setTimeout(() => insEl.classList.remove('on'), 7000);
+      }, 400);
+    }
+
+    const totalPairs = levels[curLvl - 1].length / 2;
+    if (hits === totalPairs) {
+      clearInterval(timerInt);
+      lvlTimes[curLvl - 1] = Math.floor((Date.now() - startT) / 1000);
+      setTimeout(showSummary, 2200);
+    }
+  } else {
+    a.classList.add('wr');
+    b.classList.add('wr');
+    setTimeout(() => {
+      a.classList.remove('fl', 'wr');
+      b.classList.remove('fl', 'wr');
+      a.setAttribute('aria-label', 'Carta oculta');
+      b.setAttribute('aria-label', 'Carta oculta');
+    }, 1200);
+  }
+
+  flipped = [];
+  setTimeout(() => { locked = false; }, ok ? 500 : 1300);
+}
+
+function showSummary() {
+  document.getElementById('mgrid').style.display = 'none';
+
+  const titles = [
+    'Nível 1 concluído.',
+    'Nível 2 concluído.',
+    'Todos os níveis completos.'
+  ];
+  const subs = [
+    'Você identificou as relações diretas. Os próximos pares são menos óbvios.',
+    'Bom trabalho. O último nível exige mais interpretação.',
+    'Você percebeu os padrões de comportamento que moldam produtos. Veja a análise completa.'
+  ];
+  document.getElementById('lsum-title').textContent = titles[curLvl - 1];
+  document.getElementById('lsum-sub').textContent = subs[curLvl - 1];
+
+  const ch = document.getElementById('schart');
+  ch.innerHTML = '';
+  for (let i = 0; i < curLvl; i++) {
+    const t = lvlTimes[i];
+    if (t === null) continue;
+    const h = Math.max(14, Math.min(72, 72 - t * 1.3));
+    ch.innerHTML += `
+      <div class="sbar">
+        <div class="sbfill" style="height:0px" data-h="${h}px"></div>
+        <div class="sblabel">Nível ${i + 1}<br>${t}s</div>
+      </div>`;
+  }
+
+  setTimeout(() => {
+    ch.querySelectorAll('.sbfill').forEach(bar => {
+      bar.style.height = bar.dataset.h;
+    });
+  }, 100);
+
+  const btn = document.getElementById('lsum-btn');
+  const btxt = document.getElementById('lsum-btn-txt');
+  if (curLvl < 3) {
+    btxt.textContent = 'Próximo nível';
+    btn.onclick = nextLvl;
+    const nextTab = document.getElementById(`lt${curLvl + 1}`);
+    if (nextTab) nextTab.disabled = false;
+  } else {
+    btxt.textContent = 'Ver análise completa';
+    btn.onclick = () => goto(2);
+  }
+
+  const curTab = document.getElementById(`lt${curLvl}`);
+  if (curTab) { curTab.classList.remove('on'); curTab.classList.add('done'); }
+
+  document.getElementById('lsummary').classList.add('on');
+}
+
+function nextLvl() {
+  if (curLvl >= 3) return;
+  curLvl++;
+  loadLvl(curLvl);
+  document.getElementById('lsummary').classList.remove('on');
+  document.getElementById('mgrid').style.display = 'grid';
+}
+
+loadLvl(1);
+
+/* ── LAB ─────────────────────────────────────────── */
+const labS = { delay: 0, prog: true, toast: true, anim: true };
+const dMap = [0, 500, 1000, 2000, 4000];
+const dLbls = [
+  '0 ms: instantâneo',
+  '500 ms: perceptível',
+  '1 segundo: limite do fluxo',
+  '2 segundos: causa irritação',
+  '4 segundos: risco de abandono'
+];
+let labBusy = false;
+
+function updDelay(v) {
+  labS.delay = dMap[v];
+  document.getElementById('delay-lbl').textContent = dLbls[v];
+  updMeter();
+}
+
+function togCtrl(k) {
+  labS[k] = !labS[k];
+  const tgl = document.getElementById('tgl-' + k);
+  tgl.classList.toggle('on', labS[k]);
+  tgl.setAttribute('aria-checked', labS[k] ? 'true' : 'false');
+  if (k === 'prog') {
+    document.getElementById('aprog').style.opacity = labS.prog ? '1' : '0';
+  }
+  updMeter();
+  updLabHint(k);
+}
+
+function updLabHint(k) {
+  const hints = {
+    prog: {
+      on:  '<strong>Barra de progresso ativada.</strong> O usuário sabe que algo está acontecendo. Clique no botão para sentir a diferença.',
+      off: '<strong>Barra de progresso desativada.</strong> Clique no botão agora e observe a incerteza. O app parece travado ou ignorar o clique.'
+    },
+    toast: {
+      on:  '<strong>Confirmação ativada.</strong> O usuário recebe sinal de que a ação foi concluída. Sem isso, surge dúvida: "funcionou?"',
+      off: '<strong>Confirmação desativada.</strong> Clique no botão e perceba como a ausência de resposta gera insegurança imediata.'
+    },
+    anim: {
+      on:  '<strong>Animação de clique ativada.</strong> O botão reage ao toque. Pequeno detalhe, grande impacto na percepção de qualidade.',
+      off: '<strong>Animação de clique desativada.</strong> O botão não reage ao toque. Parece um elemento estático, não interativo.'
+    }
+  };
+  const hint = hints[k];
+  if (!hint) return;
+  const el = document.getElementById('lab-hint');
+  if (el) el.innerHTML = labS[k] ? hint.on : hint.off;
+}
+
+function updMeter() {
+  const score = (labS.prog ? 1 : 0) + (labS.toast ? 1 : 0) + (labS.anim ? 1 : 0);
+  const pen = labS.delay > 1000 ? 2 : labS.delay > 0 ? 1 : 0;
+  const tot = score - pen;
+  const fill = document.getElementById('emfill');
+  const txt = document.getElementById('emtxt');
+  if (tot >= 3) {
+    fill.className = 'em-fill';
+    txt.textContent = 'Experiência completa: todos os elementos ativos';
+  } else if (tot >= 1) {
+    fill.className = 'em-fill med';
+    txt.textContent = 'Experiência degradada: usuário começa a hesitar';
+  } else {
+    fill.className = 'em-fill bad';
+    txt.textContent = 'Experiência comprometida: alta chance de abandono';
+  }
+}
+
+function labAct() {
+  if (labBusy) return;
+  labBusy = true;
+
+  const btn = document.getElementById('abtn');
+  const txt = document.getElementById('abtn-txt');
+  const sp = document.getElementById('aspinner');
+  const pf = document.getElementById('aprog-fill');
+  const toast = document.getElementById('atoast');
+
+  btn.disabled = true;
+
+  if (labS.anim) {
+    btn.style.transform = 'scale(0.94)';
+    setTimeout(() => { btn.style.transform = ''; }, 150);
+  }
+
+  txt.style.display = 'none';
+  sp.style.display = 'block';
+
+  if (labS.prog) {
+    pf.style.transition = 'width .5s ease';
+    pf.style.width = '0%';
+    setTimeout(() => { pf.style.width = '30%'; }, 50);
+    setTimeout(() => { pf.style.width = '60%'; }, labS.delay * .35 + 80);
+    setTimeout(() => { pf.style.width = '88%'; }, labS.delay * .72 + 80);
+  }
+
+  setTimeout(() => {
+    sp.style.display = 'none';
+    txt.style.display = '';
+    btn.disabled = false;
+
+    if (labS.prog) {
+      pf.style.transition = 'width .3s ease';
+      pf.style.width = '100%';
+    }
+
+    if (labS.toast) {
+      toast.classList.add('on');
+      setTimeout(() => {
+        toast.classList.remove('on');
+        if (labS.prog) {
+          setTimeout(() => {
+            pf.style.transition = 'width .4s ease';
+            pf.style.width = '0%';
+          }, 350);
+        }
+      }, 2200);
+    } else {
+      if (labS.prog) {
+        setTimeout(() => {
+          pf.style.transition = 'width .4s ease';
+          pf.style.width = '0%';
+        }, 600);
+      }
+    }
+
+    labBusy = false;
+  }, labS.delay + 200);
+}
+
+function labReset() {
+  labBusy = false;
+  labS.delay = 0;
+  labS.prog = true;
+  labS.toast = true;
+  labS.anim = true;
+
+  const btn = document.getElementById('abtn');
+  btn.disabled = false;
+  btn.style.transform = '';
+  document.getElementById('abtn-txt').style.display = '';
+  document.getElementById('aspinner').style.display = 'none';
+  document.getElementById('atoast').classList.remove('on');
+  document.getElementById('aprog').style.opacity = '1';
+  const pf = document.getElementById('aprog-fill');
+  pf.style.transition = 'width .3s ease';
+  pf.style.width = '0%';
+
+  // Reset toggles
+  ['prog','toast','anim'].forEach(k => {
+    const tgl = document.getElementById('tgl-' + k);
+    if (tgl) { tgl.classList.add('on'); tgl.setAttribute('aria-checked','true'); }
+  });
+
+  // Reset slider
+  const slider = document.getElementById('dslider');
+  if (slider) slider.value = 0;
+  document.getElementById('delay-lbl').textContent = '0 ms: instantâneo';
+
+  // Reset hint and meter
+  const hintEl = document.getElementById('lab-hint');
+  if (hintEl) hintEl.innerHTML = '<strong>Experimente:</strong> desative apenas a barra de progresso e clique no botão. Observe como a ausência de um único elemento muda o que você sente em relação ao app.';
+  updMeter();
+}
+
+/* ── CHOICE ──────────────────────────────────────── */
+const cData = {
+  a: {
+    title: 'Você escolheu o plano básico.',
+    text: 'Usuários que optam pelo menor plano costumam fazê-lo por cautela ou orçamento. O papel do Starter vai além do produto em si: ele existe para tornar o plano intermediário mais razoável por contraste. Esse mecanismo é chamado de <span class="rh">ancoragem de preço</span>. O ponto de referência mais baixo reposiciona as demais opções na percepção do usuário.',
+    num: '~18%',
+    txt: 'dos usuários escolhem o menor plano. Ele cumpre uma função estratégica de posicionamento para as outras opções.'
+  },
+  b: {
+    title: 'Você escolheu o plano Pro.',
+    text: 'Esse card era maior, tinha borda destacada e o rótulo "Mais popular". Nenhum desses elementos foi casual. O design aplicou o princípio de <span class="rh">arquitetura de escolha</span>: a estrutura visual orienta a atenção sem restringir a liberdade. O resultado é uma decisão que parece completamente livre, mas foi influenciada antes do primeiro clique.',
+    num: '~67%',
+    txt: 'dos usuários escolhem o plano central quando ele é visualmente destacado, independente do valor.'
+  },
+  c: {
+    title: 'Você escolheu o plano Enterprise.',
+    text: 'O plano Enterprise foi posicionado como referência de topo para tornar o Pro mais acessível por comparação. Esse mecanismo é chamado de <span class="rh">efeito isca</span>. Ao escolhê-lo, você pode ter reconhecido o padrão, ou simplesmente avaliado o conteúdo com mais cuidado e concluído que ele atendia melhor à sua necessidade real.',
+    num: '~15%',
+    txt: 'dos usuários escolhem o plano mais caro. Tendem a pesquisar com mais cuidado antes de decidir.'
+  }
+};
+
+function pick(opt) {
+  const d = cData[opt];
+  document.getElementById('cr-title').textContent = d.title;
+  document.getElementById('cr-text').innerHTML = d.text;
+  document.getElementById('cr-num').textContent = d.num;
+  document.getElementById('cr-txt').textContent = d.txt;
+
+  // Highlight selected, dim others — but keep all clickable
+  document.querySelectorAll('.coption').forEach(c => {
+    c.style.opacity = '0.42';
+    c.style.transform = '';
+  });
+  const optMap = { a: 0, b: 1, c: 2 };
+  const selected = document.querySelectorAll('.coption')[optMap[opt]];
+  selected.style.opacity = '1';
+  selected.style.transform = 'translateY(-6px) scale(1.04)';
+
+  const reveal = document.getElementById('creveal');
+  reveal.classList.add('on');
+}
+
+function resetChoice() {
+  document.querySelectorAll('.coption').forEach(c => {
+    c.style.opacity = '1';
+    c.style.transform = '';
+  });
+  const reveal = document.getElementById('creveal');
+  reveal.classList.remove('on');
+}
+
+/* ── DOMINO EFFECT ────────────────────────────────── */
+const faults = { slow: false, noerror: false, nostate: false, noprogress: false };
+
+const faultConfig = {
+  slow: {
+    affects: ['df-load'],
+    stepDesc: {
+      'df-load': { affected: 'Dados demorando 3s+. Usuário não sabe se o app travou.', broken: null },
+    },
+    cascades: { 'df-action': 'affected', 'df-retain': 'affected' }
+  },
+  noerror: {
+    affects: ['df-action'],
+    stepDesc: {
+      'df-action': { affected: null, broken: 'Ação executada sem resposta. Usuário não sabe se funcionou.' },
+    },
+    cascades: { 'df-onboard': 'affected', 'df-retain': 'broken' }
+  },
+  nostate: {
+    affects: ['df-empty'],
+    stepDesc: {
+      'df-empty': { affected: null, broken: 'Tela vazia. Usuário não sabe o que fazer a seguir.' },
+    },
+    cascades: { 'df-onboard': 'broken', 'df-retain': 'broken' }
+  },
+  noprogress: {
+    affects: ['df-onboard'],
+    stepDesc: {
+      'df-onboard': { affected: null, broken: 'Sem indicador de etapas. Usuário abandona sem concluir.' },
+    },
+    cascades: { 'df-retain': 'broken' }
+  }
+};
+
+const defaultDescs = {
+  'df-load': 'Dados carregados rapidamente. Confiança estabelecida.',
+  'df-action': 'Resposta imediata com feedback visual claro.',
+  'df-empty': 'Conteúdo ou guia presente. Usuário sabe como avançar.',
+  'df-onboard': 'Progresso visível. Usuário completa as etapas.',
+  'df-retain': 'Hábito formado. Usuário retorna ao produto.'
+};
+
+function toggleFault(key) {
+  faults[key] = !faults[key];
+  const ctrl = document.getElementById('dc-' + key);
+  ctrl.classList.toggle('active', faults[key]);
+  ctrl.querySelector('.dctrl-tag').textContent = faults[key] ? 'FALHA' : 'OK';
+  renderDomino();
+}
+
+function resetFaults() {
+  Object.keys(faults).forEach(k => {
+    faults[k] = false;
+    const ctrl = document.getElementById('dc-' + k);
+    if(ctrl) {
+      ctrl.classList.remove('active');
+      ctrl.querySelector('.dctrl-tag').textContent = 'OK';
+    }
+  });
+  renderDomino();
+}
+
+function renderDomino() {
+  // Compute step states
+  const states = {
+    'df-load': 'ok',
+    'df-action': 'ok',
+    'df-empty': 'ok',
+    'df-onboard': 'ok',
+    'df-retain': 'ok'
+  };
+  const descs = { ...defaultDescs };
+
+  Object.entries(faults).forEach(([key, active]) => {
+    if (!active) return;
+    const cfg = faultConfig[key];
+    // Direct faults
+    cfg.affects.forEach(stepId => {
+      states[stepId] = 'broken';
+      const d = cfg.stepDesc[stepId];
+      if (d && d.broken) descs[stepId] = d.broken;
+      else if (d && d.affected) descs[stepId] = d.affected;
+    });
+    // Cascades — only upgrade severity
+    Object.entries(cfg.cascades).forEach(([stepId, severity]) => {
+      const order = ['ok', 'affected', 'broken'];
+      if (order.indexOf(severity) > order.indexOf(states[stepId])) {
+        states[stepId] = severity;
+      }
+    });
+  });
+
+  // Apply to DOM with staggered animation
+  Object.entries(states).forEach(([stepId, state], i) => {
+    const el = document.getElementById(stepId);
+    if (!el) return;
+    setTimeout(() => {
+      el.className = `dflow-step ${state}`;
+      const descEl = document.getElementById('dfd-' + stepId.replace('df-', ''));
+      if (descEl) descEl.textContent = descs[stepId];
+    }, i * 80);
+  });
+
+  // Update impact meter
+  const brokenCount = Object.values(states).filter(s => s === 'broken').length;
+  const affectedCount = Object.values(states).filter(s => s === 'affected').length;
+  // Score starts at 100. Each broken step costs 20, each affected costs 8. Floor at 0.
+  const score = Math.max(0, 100 - brokenCount * 20 - affectedCount * 8);
+
+  setTimeout(() => {
+    const imp = document.getElementById('dimp');
+    const scoreEl = document.getElementById('dimp-score');
+    const textEl = document.getElementById('dimp-text');
+    const fillEl = document.getElementById('dimp-fill');
+
+    scoreEl.textContent = score + '%';
+    fillEl.style.width = score + '%';
+
+    if (score >= 80) {
+      imp.className = 'domino-impact good';
+      textEl.textContent = 'Experiência saudável: o usuário completa a jornada com confiança.';
+    } else if (score >= 40) {
+      imp.className = 'domino-impact med';
+      textEl.textContent = 'Experiência comprometida: o usuário hesita e pode abandonar o produto.';
+    } else {
+      imp.className = 'domino-impact bad';
+      textEl.textContent = 'Experiência crítica: alto risco de abandono nos primeiros dias.';
+    }
+  }, 400);
+}
+
+// Init domino
+renderDomino();
+// Animate initial fill width with a slight delay for visual effect
+setTimeout(() => {
+  document.getElementById('dimp-fill').style.width = '100%';
+  document.getElementById('dimp-score').textContent = '100%';
+}, 300);
+</script>
+</body>
+</html>
